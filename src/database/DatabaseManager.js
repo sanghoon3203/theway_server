@@ -982,8 +982,26 @@ class DatabaseManager {
     }
     
     async updatePlayer(playerId, updates) {
-        const fields = Object.keys(updates).map(key => `${key} = ?`).join(', ');
-        const values = Object.values(updates);
+        // SQL injection 방지를 위한 허용된 필드 화이트리스트
+        const allowedFields = [
+            'name', 'money', 'trust_points', 'current_license', 
+            'max_inventory_size', 'location_lat', 'location_lng'
+        ];
+        
+        // 허용되지 않은 필드 필터링
+        const safeUpdates = {};
+        for (const [key, value] of Object.entries(updates)) {
+            if (allowedFields.includes(key)) {
+                safeUpdates[key] = value;
+            }
+        }
+        
+        if (Object.keys(safeUpdates).length === 0) {
+            throw new Error('업데이트할 유효한 필드가 없습니다.');
+        }
+        
+        const fields = Object.keys(safeUpdates).map(key => `${key} = ?`).join(', ');
+        const values = Object.values(safeUpdates);
         values.push(playerId);
         
         const sql = `UPDATE players SET ${fields}, last_active = CURRENT_TIMESTAMP WHERE id = ?`;

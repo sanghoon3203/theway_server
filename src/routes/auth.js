@@ -58,5 +58,44 @@ export default function createAuthRoutes(authService) {
         }
     });
     
+    // 토큰 갱신
+    router.post('/refresh', async (req, res) => {
+        try {
+            const { refreshToken } = req.body;
+            
+            if (!refreshToken) {
+                return res.status(400).json({
+                    success: false,
+                    error: 'Refresh token이 필요합니다.'
+                });
+            }
+            
+            // JWT 토큰 검증
+            const decoded = authService.verifyToken(refreshToken);
+            if (!decoded) {
+                return res.status(401).json({
+                    success: false,
+                    error: '유효하지 않은 refresh token입니다.'
+                });
+            }
+            
+            // 새로운 토큰 생성
+            const newToken = authService.generateToken(decoded.userId);
+            
+            res.json({
+                success: true,
+                token: newToken,
+                message: '토큰이 성공적으로 갱신되었습니다.'
+            });
+            
+        } catch (error) {
+            console.error('토큰 갱신 오류:', error);
+            res.status(500).json({
+                success: false,
+                error: '토큰 갱신 중 오류가 발생했습니다.'
+            });
+        }
+    });
+    
     return router;
 }

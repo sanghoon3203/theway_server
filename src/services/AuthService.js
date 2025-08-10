@@ -5,7 +5,13 @@ import { v4 as uuidv4 } from 'uuid';
 class AuthService {
     constructor(database) {
         this.db = database;
-        this.jwtSecret = process.env.JWT_SECRET || 'your-secret-key';
+        
+        // JWT 시크릿 보안 강화 - 환경변수 필수
+        if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+            throw new Error('JWT_SECRET 환경변수가 설정되지 않았거나 너무 짧습니다. 최소 32자 이상이어야 합니다.');
+        }
+        
+        this.jwtSecret = process.env.JWT_SECRET;
         this.saltRounds = 10;
     }
     
