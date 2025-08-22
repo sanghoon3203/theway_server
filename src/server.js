@@ -18,8 +18,14 @@ dotenv.config();
 
 class GameServer {
     constructor() {
+        console.log('📦 GameServer 생성자 시작');
+        
         this.app = express();
+        console.log('✅ Express 앱 생성');
+        
         this.server = createServer(this.app);
+        console.log('✅ HTTP 서버 생성');
+        
         this.gameService = null;
         this.io = new SocketIOServer(this.server, {
             cors: {
@@ -29,30 +35,52 @@ class GameServer {
                 credentials: true
             }
         });
+        console.log('✅ Socket.IO 서버 생성');
         
-        this.port = process.env.PORT || 3000;
+        this.port = process.env.PORT || 3001;
+        console.log(`✅ 포트 설정: ${this.port}`);
         
         // ✅ Socket.io 타이머 관리
         this.priceUpdateInterval = null;
         this.connectedClients = new Map();
         
         this.db = new DatabaseManager();
-        this.authService = new AuthService(this.db);
+        console.log('✅ DatabaseManager 생성');
         
+        this.authService = new AuthService(this.db);
+        console.log('✅ AuthService 생성');
+        
+        console.log('🔧 미들웨어 설정 중...');
         this.setupMiddleware();
+        console.log('✅ 미들웨어 설정 완료');
+        
+        console.log('🔧 라우트 설정 중...');
         this.setupRoutes();
+        console.log('✅ 라우트 설정 완료');
+        
+        console.log('🔧 Socket 설정 중...');
         this.setupSocket();
+        console.log('✅ Socket 설정 완료');
+        
+        console.log('📦 GameServer 생성자 완료');
     }
     
     async initializeDatabase() {
         try {
+            console.log('🔄 데이터베이스 연결 중...');
             await this.db.initialize();
+            console.log('✅ 데이터베이스 연결 완료');
+            
+            console.log('🔄 테이블 생성 중...');
             await this.db.createTables();
-            await this.db.createInitialData();
+            console.log('✅ 테이블 생성 완료');
+            
+            console.log('🔄 GameService 초기화 중...');
             this.gameService = new GameService(this.db);    
             console.log('✅ 데이터베이스 초기화 완료');
         } catch (error) {
             console.error('❌ 데이터베이스 초기화 실패:', error);
+            console.error('상세 오류:', error.message);
             throw error;
         }
     }
@@ -238,17 +266,69 @@ class GameServer {
         }
     }
     
+    async findAvailablePort(startPort) {
+        // 간단한 방법: 연속적으로 포트 증가시키기
+        let port = startPort;
+        const maxAttempts = 10;
+        
+        for (let i = 0; i < maxAttempts; i++) {
+            try {
+                await new Promise((resolve, reject) => {
+                    const tempServer = this.app.listen(port, () => {
+                        tempServer.close();
+                        resolve();
+                    });
+                    
+                    tempServer.on('error', (err) => {
+                        if (err.code === 'EADDRINUSE') {
+                            reject(err);
+                        } else {
+                            reject(err);
+                        }
+                    });
+                });
+                
+                return port; // 포트 사용 가능
+            } catch (error) {
+                if (error.code === 'EADDRINUSE') {
+                    port++;
+                    continue;
+                } else {
+                    throw error;
+                }
+            }
+        }
+        
+        throw new Error(`사용 가능한 포트를 찾을 수 없습니다 (${startPort} - ${startPort + maxAttempts})`);
+    }
+    
     async start() {
         try {
+            console.log('🔄 데이터베이스 초기화 중...');
             await this.initializeDatabase();
+            console.log('✅ 데이터베이스 초기화 완료');
             
+            // 서버 시작 (IPv4와 IPv6 모두 지원하도록 설정)
             this.server.listen(this.port, () => {
-                console.log('🎉 서버 시작!');
-                console.log(`📍 주소: http://localhost:${this.port}`);
+                console.log('🎉 서버 시작 성공!');
+                console.log(`📍 로컬 주소: http://localhost:${this.port}`);
+                console.log(`📍 IPv4 주소: http://127.0.0.1:${this.port}`);
                 console.log(`💊 헬스체크: http://localhost:${this.port}/health`);
                 console.log(`🔌 Socket.IO: ws://localhost:${this.port}`);
                 console.log(`📊 API: http://localhost:${this.port}/api`);
             });
+            
+            this.server.on('error', (error) => {
+                if (error.code === 'EADDRINUSE') {
+                    console.log(`⚠️  포트 ${this.port}가 사용 중입니다.`);
+                    console.log(`다른 포트를 시도하거나 기존 프로세스를 종료해주세요.`);
+                    console.log(`lsof -ti:${this.port} | xargs kill -9 명령으로 기존 프로세스를 종료할 수 있습니다.`);
+                } else {
+                    console.error('❌ 서버 오류:', error);
+                }
+                process.exit(1);
+            });
+            
         } catch (error) {
             console.error('❌ 서버 시작 실패:', error);
             process.exit(1);
@@ -277,11 +357,20 @@ class GameServer {
 }
 
 // 서버 실행
+console.log('🚀 서버 시작 프로세스 시작...');
+
 const server = new GameServer();
+console.log('✅ GameServer 인스턴스 생성 완료');
 
 // ✅ 우아한 종료 처리
-process.on('SIGTERM', () => server.stop());
-process.on('SIGINT', () => server.stop());
+process.on('SIGTERM', () => {
+    console.log('📢 SIGTERM 받음');
+    server.stop();
+});
+process.on('SIGINT', () => {
+    console.log('📢 SIGINT 받음');
+    server.stop();
+});
 process.on('uncaughtException', (error) => {
     console.error('❌ Uncaught Exception:', error);
     server.stop();
@@ -291,4 +380,5 @@ process.on('unhandledRejection', (reason, promise) => {
     server.stop();
 });
 
+console.log('🔥 server.start() 호출 중...');
 server.start();

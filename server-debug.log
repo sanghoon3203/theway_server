@@ -1,0 +1,43 @@
+🔄 데이터베이스 초기화 중...
+🗄 데이터베이스 초기화 중...
+✅ SQLite 연결: /Users/kimsanghoon/Documents/GitHub/theway_server/data/game.db
+📋 데이터베이스 테이블 생성 중...
+✅ 테이블 생성: users
+✅ 테이블 생성: players
+✅ 테이블 생성: character_appearance
+✅ 테이블 생성: character_stats
+✅ 테이블 생성: character_cosmetics
+✅ 테이블 생성: level_requirements
+✅ 테이블 생성: achievements
+✅ 테이블 생성: player_achievements
+✅ 테이블 생성: item_master
+✅ 테이블 생성: inventory
+✅ 테이블 생성: item_enhancement
+✅ 테이블 생성: magic_properties
+✅ 테이블 생성: item_sets
+✅ 테이블 생성: special_items
+✅ 테이블 생성: merchants
+✅ 테이블 생성: merchant_dialogues
+✅ 테이블 생성: player_merchant_relations
+✅ 테이블 생성: merchant_mood_events
+✅ 테이블 생성: merchant_services
+✅ 테이블 생성: trades
+✅ 테이블 생성: negotiations
+✅ 테이블 생성: market_trends
+✅ 테이블 생성: market_orders
+✅ 테이블 생성: auction_bids
+✅ 테이블 생성: trade_contracts
+✅ 테이블 생성: trading_guilds
+✅ 테이블 생성: guild_memberships
+✅ 테이블 생성: trade_insurance
+✅ 테이블 생성: insurance_claims
+✅ 데이터베이스 테이블 생성 완료
+📦 기존 데이터를 사용합니다.
+✅ 데이터베이스 초기화 완료
+✅ 데이터베이스 초기화 완료
+🎉 서버 시작 성공!
+📍 로컬 주소: http://localhost:3001
+📍 네트워크 주소: http://192.168.219.102:3001
+💊 헬스체크: http://192.168.219.102:3001/health
+🔌 Socket.IO: ws://192.168.219.102:3001
+📊 API: http://192.168.219.102:3001/api

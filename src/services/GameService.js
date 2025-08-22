@@ -514,9 +514,23 @@ class GameService {
                         category: item.item_category,
                         basePrice: item.base_price,
                         currentPrice: item.current_price,
-                        grade: item.item_grade,
-                        requiredLicense: item.required_license,
-                        acquiredAt: item.acquired_at
+                        grade: item.item_grade || 'common',
+                        requiredLicense: item.required_license || 1,
+                        acquiredAt: item.acquired_at,
+                        // iOS가 기대하는 추가 필드들 (기본값 제공)
+                        weight: item.weight || 1.0,
+                        durability: item.durability || 100,
+                        currentDurability: item.current_durability || item.durability || 100,
+                        maxStack: item.max_stack || 1,
+                        isStackable: item.is_stackable || false,
+                        isConsumable: item.is_consumable || false,
+                        isTradeable: item.is_tradeable !== false,
+                        isDropable: item.is_dropable !== false,
+                        // 고급 시스템 기본값
+                        enhancementLevel: 0,
+                        magicalProperties: [],
+                        socketGems: [],
+                        enchantments: []
                     })),
                     inventoryCount: inventory.length
                 }

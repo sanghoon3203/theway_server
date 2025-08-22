@@ -1,4 +1,4 @@
-// 임시 AuthService (bcrypt 없이)
+import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -6,23 +6,27 @@ class AuthService {
     constructor(database) {
         this.db = database;
         
+        // JWT 시크릿 보안 강화 - 환경변수 필수
         if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
             throw new Error('JWT_SECRET 환경변수가 설정되지 않았거나 너무 짧습니다. 최소 32자 이상이어야 합니다.');
         }
         
         this.jwtSecret = process.env.JWT_SECRET;
+        this.saltRounds = 10;
     }
     
     async register(email, password, playerName) {
         try {
+            // 이메일 중복 체크
             const existingUser = await this.db.getUserByEmail(email);
             if (existingUser) {
                 throw new Error('이미 존재하는 이메일입니다.');
             }
             
-            // 임시: bcrypt 없이 패스워드를 그대로 저장 (개발용)
-            const passwordHash = password; // 실제로는 bcrypt.hash(password, 10) 사용
+            // 비밀번호 해시화
+            const passwordHash = await bcrypt.hash(password, this.saltRounds);
             
+            // 사용자 생성
             const userId = uuidv4();
             await this.db.createUser({
                 id: userId,
@@ -30,6 +34,7 @@ class AuthService {
                 passwordHash: passwordHash
             });
             
+            // 플레이어 데이터 생성
             const playerId = uuidv4();
             await this.db.createPlayer({
                 id: playerId,
@@ -41,6 +46,7 @@ class AuthService {
                 maxInventorySize: 5
             });
             
+            // JWT 토큰 생성
             const token = this.generateToken(userId);
             
             return {
@@ -55,8 +61,7 @@ class AuthService {
                     name: playerName,
                     money: 50000,
                     trustPoints: 0,
-                    currentLicense: 1,
-                    maxInventorySize: 5  // ← 이미 수정됨
+                    currentLicense: 1
                 }
             };
         } catch (error) {
@@ -69,22 +74,25 @@ class AuthService {
     
     async login(email, password) {
         try {
+            // 사용자 조회
             const user = await this.db.getUserByEmail(email);
             if (!user) {
                 throw new Error('이메일 또는 비밀번호가 잘못되었습니다.');
             }
             
-            // 임시: 단순 비교 (실제로는 bcrypt.compare 사용)
-            const isValidPassword = (password === user.password_hash);
+            // 비밀번호 확인
+            const isValidPassword = await bcrypt.compare(password, user.password_hash);
             if (!isValidPassword) {
                 throw new Error('이메일 또는 비밀번호가 잘못되었습니다.');
             }
             
+            // 플레이어 정보 조회
             const player = await this.db.getPlayerByUserId(user.id);
             if (!player) {
                 throw new Error('플레이어 정보를 찾을 수 없습니다.');
             }
             
+            // JWT 토큰 생성
             const token = this.generateToken(user.id);
             
             return {

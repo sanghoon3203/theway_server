@@ -30,14 +30,15 @@ class DatabaseManager {
                     reject(err);
                     return;
                 }
+                
+                // 메서드를 Promise로 변환 (연결 성공 후)
+                this.db.run = promisify(this.db.run.bind(this.db));
+                this.db.get = promisify(this.db.get.bind(this.db));
+                this.db.all = promisify(this.db.all.bind(this.db));
+                
                 console.log(`✅ SQLite 연결: ${this.dbPath}`);
                 resolve();
             });
-            
-            // 메서드를 Promise로 변환
-            this.db.run = promisify(this.db.run.bind(this.db));
-            this.db.get = promisify(this.db.get.bind(this.db));
-            this.db.all = promisify(this.db.all.bind(this.db));
         });
     }
     
@@ -602,6 +603,17 @@ class DatabaseManager {
         }
     }
     
+    // 초기 데이터 존재 여부 확인
+    async checkInitialData() {
+        try {
+            const result = await this.db.get('SELECT COUNT(*) as count FROM item_master');
+            return result.count > 0;
+        } catch (error) {
+            console.log('초기 데이터 확인 중 오류 (신규 DB로 간주):', error.message);
+            return false;
+        }
+    }
+
     async createInitialData() {
         console.log('📦 초기 데이터 생성 중...');
         
